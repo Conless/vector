@@ -24,10 +24,10 @@ template <class T> class vector {
         end_of_storage = start + 1;
     }
     vector(const vector &other) noexcept {
-        delete[] start;
-        start = other.start;
-        finish = other.finish;
-        end_of_storage = other.end_of_storage;
+        start = new value_type[other.capacity()];
+        finish = start + other.size();
+        end_of_storage = start + other.capacity();
+        std::copy(other.start, other.finish, start);
     }
     vector(vector &&other) noexcept = default;
     explicit vector(size_type count, const T &value = T()) noexcept {
@@ -45,10 +45,14 @@ template <class T> class vector {
     }
 
     vector &operator=(const vector &other) {
-        delete[] start;
-        start = other.start;
-        finish = other.finish;
-        end_of_storage = other.end_of_storage;
+        if (this == &other)
+            return *this;
+        if (start != nullptr)
+            delete[] start;
+        start = new value_type[other.capacity()];
+        finish = start + other.size();
+        end_of_storage = start + other.capacity();
+        std::copy(other.start, other.finish, start);
         return *this;
     }
 
@@ -97,6 +101,7 @@ template <class T> class vector {
         if (finish == end_of_storage)
             reserve(capacity() << 1);
         *finish = value;
+        finish++;
     }
     void pop_back() { finish--; }
     void clear() { finish = start; }
