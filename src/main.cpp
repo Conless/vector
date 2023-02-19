@@ -1,132 +1,51 @@
 #include "vector.hpp"
 
+#include "class-integer.hpp"
+#include "class-matrix.hpp"
+#include "class-bint.hpp"
+
 #include <iostream>
-#include <iomanip>
-#include <vector>
+#include <fstream>
+#include <string>
 
-void TestConstructor()
+void TestInteger()
 {
-	std::cout << "Testing constructors and assignment operator..." << std::endl;
-	sjtu::vector<int> v;
+	std::cout << "Test for classes without default constructor..." << std::endl;
+	sjtu::vector<Integer> vInt;
+	for (int i = 1; i <= 100; ++i) {
+		vInt.push_back(Integer(i));
+	}
+	std::cout << "Test OK..." << std::endl;
+}
+
+void TestMatrix()
+{
+	std::cout << "Test for my Matrix..." << std::endl;
+	sjtu::vector<Diamond::Matrix<double>> vM;
 	for (int i = 1; i <= 10; ++i) {
-		v.push_back(i);
+		vM.push_back(Diamond::Matrix<double>(i, i, i));
 	}
-	const sjtu::vector<int> vc(v);
-	for (size_t i = 0; i < vc.size(); ++i) {
-		std::cout << vc[i] << " ";
+	for (size_t i = 0; i < vM.size(); ++i) {
+		std::cout << vM[i] << std::endl;
 	}
-	std::cout << std::endl;
-	sjtu::vector<int> vv;
-	for (int i = 0; i < 10; ++i) {
-		vv.push_back(i);
-	}
-	for (size_t i = 0; i < vv.size(); ++i) {
-		std::cout << vv[i] << " ";
-	}
-	std::cout << std::endl;
-	vv = v;
-	for (size_t i = 0; i < vv.size(); ++i) {
-		std::cout << vv[i] << " ";
-	}
-	std::cout << std::endl;
 }
 
-void TestIterators()
+void TestBint()
 {
-	std::cout << "Testing iterators..." << std::endl; 
-	sjtu::vector<int> v;
-	for (int i = 1; i <= 20; ++i) {
-		v.push_back(i);
+	std::cout << "Test for big integer" << std::endl;
+	sjtu::vector<Util::Bint> vBint;
+	for (long long i = 1LL << 50; i < (1LL << 50) + 10; ++i) {
+		vBint.push_back(Util::Bint(i) * i);
 	}
-	for (sjtu::vector<int>::iterator it = v.begin(); it != v.end(); ++it) {
-		std::cout << *it << " ";
-	}
-	std::cout << std::endl;
-	const sjtu::vector<int> vc(v);
-	for (sjtu::vector<int>::const_iterator it = vc.cbegin(); it != vc.cend(); ++it) {
+	for (sjtu::vector<Util::Bint>::iterator it = vBint.begin(); it != vBint.end(); ++it) {
 		std::cout << *it << " ";
 	}
 	std::cout << std::endl;
 }
 
-void TestAccessingMethod()
+int main()
 {
-	std::cout << "Testing accessing methods..." << std::endl;
-	sjtu::vector<long long> vd;
-	for (long long i = 0; i < 50; ++i) {
-		vd.push_back(1LL << i);
-	}
-	for (size_t i = 0; i < vd.size(); ++i) {
-		std::cout << vd[i] << std::endl;
-	}
-	try {
-		std::cout << vd.at(100) << std::endl;
-	} catch(...) {
-		std::cout << "exceptions thrown correctly." << std::endl;
-	}
-}
-
-void TestPush_Pop()
-{
-	std::cout << "Testing push_back and pop_back..." << std::endl;
-	sjtu::vector<double> vd;
-	for (double i = 0.0; i < 10.0; i += 1.0) {
-		vd.push_back(i);
-	}
-	std::cout << vd.back() << std::endl;
-	for (double i = 20.0; i < 23.0; i += 1.0) {
-		vd.push_back(i);
-	}
-	std::cout << vd.back() << std::endl;
-	vd.pop_back();
-	std::cout << vd.back() << std::endl;
-	vd.pop_back();
-	std::cout << vd.back() << std::endl;
-	for (int i = 0; i < 5; ++i) {
-		vd.pop_back();
-	}
-	std::cout << vd.back() << std::endl;
-}
-
-void TestInsert()
-{
-	std::cout << "Testing insert functions" << std::endl;
-	sjtu::vector<int> v;
-	for (int i = 0; i < 10; ++i) {
-		v.push_back(i);
-	}
-	v.insert(v.begin() + 3, 100);
-	v.insert(v.begin() + 5, 200);
-	for (sjtu::vector<int>::iterator it = v.begin(); it != v.end(); ++it) {
-		std::cout << *it << " ";
-	}
-	std::cout << std::endl;
-}
-
-void TestErase()
-{
-	std::cout << "Testing erase functions" << std::endl;
-	sjtu::vector<int> v;
-	for (int i = 0; i < 10; ++i) {
-		v.push_back(i);
-	}
-	v.insert(v.begin() + 3, 100);
-	v.insert(v.begin() + 5, 200);
-	v.erase(v.begin() + 5);
-	v.erase(v.begin() + 3);
-	for (sjtu::vector<int>::iterator it = v.begin(); it != v.end(); ++it) {
-		std::cout << *it << " ";
-	}
-	std::cout << std::endl;
-}
-
-int main(int argc, char const *argv[])
-{
-	TestConstructor();
-	TestIterators();
-	TestAccessingMethod();
-	TestPush_Pop();
-	TestInsert();
-	TestErase();
-	return 0;
+	TestInteger();
+	TestMatrix();
+	TestBint();
 }

@@ -3,13 +3,14 @@
 
 #include <cmath>
 #include <iostream>
-#include <stdexcept>
+#include <memory>
 
 namespace sjtu {
 
-template <class T> class vector {
+template <class T, class Allocator = std::allocator<T>> class vector {
   public:
     typedef T value_type;
+    typedef Allocator allocator_type;
     typedef size_t size_type;
     typedef unsigned int difference_type;
     typedef value_type &reference;
@@ -19,28 +20,28 @@ template <class T> class vector {
 
   public:
     vector() noexcept {
-        start = new value_type[1];
+        start = alloc.allocate(1);
         finish = start;
         end_of_storage = start + 1;
     }
     vector(const vector &other) noexcept {
-        start = new value_type[other.capacity()];
+        start = alloc.allocate(other.capacity());
         finish = start + other.size();
         end_of_storage = start + other.capacity();
-        std::copy(other.start, other.finish, start);
+        std::uninitialized_copy(other.start, other.finish, start);
     }
     vector(vector &&other) noexcept = default;
     explicit vector(size_type count, const T &value = T()) noexcept {
         int new_size = pow(2, ceil(log2(count)));
-        start = new T[new_size];
+        start = alloc.allocate(new_size);
         finish = start + count;
-        for (iterator it = start; it != finish; it++)
-            *it = value;
         end_of_storage = start + new_size;
+        for (iterator it = start; it != finish; it++)
+            alloc.construct(it, value);
     }
 
     ~vector() {
-        delete[] start;
+        alloc.deallocate(start, capacity());
         start = finish = end_of_storage = nullptr;
     }
 
@@ -48,8 +49,8 @@ template <class T> class vector {
         if (this == &other)
             return *this;
         if (start != nullptr)
-            delete[] start;
-        start = new value_type[other.capacity()];
+            alloc.deallocate(start, capacity());
+        start = alloc.allocate(other.capacity());
         finish = start + other.size();
         end_of_storage = start + other.capacity();
         std::copy(other.start, other.finish, start);
@@ -82,16 +83,16 @@ template <class T> class vector {
         if (new_cap <= capacity())
             return;
         int new_size = pow(2, ceil(log2(new_cap)));
-        iterator new_start = new value_type[new_size];
+        iterator new_start = alloc.allocate(new_size);
         iterator new_finish = new_start + size();
         iterator new_end_of_storage = new_start + new_size;
         try {
-            std::copy(start, finish, new_start);
+            std::uninitialized_copy(start, finish, new_start);
         } catch (...) {
-            delete[] new_start;
+            alloc.deallocate(new_start, new_size);
             throw;
         }
-        delete[] start;
+        alloc.deallocate(start, capacity());
         start = new_start;
         finish = new_finish;
         end_of_storage = new_end_of_storage;
@@ -100,18 +101,29 @@ template <class T> class vector {
     void push_back(const value_type &value) {
         if (finish == end_of_storage)
             reserve(capacity() << 1);
-        *finish = value;
+        alloc.construct(finish, value);
         finish++;
     }
-    void pop_back() { finish--; }
-    void clear() { finish = start; }
+    void pop_back() {
+        finish--;
+        alloc.destroy(finish);
+    }
+    void clear() {
+        while (--finish != start)
+            alloc.destroy(finish);
+        alloc.destroy(start);
+    }
 
     iterator insert(iterator pos, const value_type &value) {
         if (pos < start || pos > finish)
             throw std::out_of_range("");
+        int index = pos - start;
         if (finish == end_of_storage)
             reserve(capacity() << 1);
-        std::copy_backward(pos, finish, pos + 1);
+        pos = start + index;
+        alloc.construct(finish, *(finish - 1));
+        finish++;
+        std::copy_backward(pos, finish - 2, finish - 1);
         *pos = value;
         return pos;
     }
@@ -123,6 +135,7 @@ template <class T> class vector {
         if (pos + 1 != finish)
             std::copy(pos + 1, finish, pos);
         --finish;
+        alloc.destroy(finish);
         return pos;
     }
     iterator erase(const size_t &pos) { return erase(begin() + pos); }
@@ -131,6 +144,7 @@ template <class T> class vector {
     iterator start;
     iterator finish;
     iterator end_of_storage;
+    allocator_type alloc;
 };
 
 template class vector<int>;
