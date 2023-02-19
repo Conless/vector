@@ -3,7 +3,6 @@
 
 #include <cmath>
 #include <iostream>
-#include <memory>
 
 namespace sjtu {
 
@@ -28,7 +27,8 @@ template <class T, class Allocator = std::allocator<T>> class vector {
         start = alloc.allocate(other.capacity());
         finish = start + other.size();
         end_of_storage = start + other.capacity();
-        std::uninitialized_copy(other.start, other.finish, start);
+        for (iterator it1 = start, it2 = other.start; it2 != other.finish; it1++, it2++)
+            alloc.construct(it1, *it2);
     }
     vector(vector &&other) noexcept = default;
     explicit vector(size_type count, const T &value = T()) noexcept {
@@ -41,6 +41,7 @@ template <class T, class Allocator = std::allocator<T>> class vector {
     }
 
     ~vector() {
+        clear();
         alloc.deallocate(start, capacity());
         start = finish = end_of_storage = nullptr;
     }
@@ -87,11 +88,13 @@ template <class T, class Allocator = std::allocator<T>> class vector {
         iterator new_finish = new_start + size();
         iterator new_end_of_storage = new_start + new_size;
         try {
-            std::uninitialized_copy(start, finish, new_start);
+            for (iterator it1 = new_start, it2 = start; it2 != finish; it1++, it2++)
+                alloc.construct(it1, *it2);
         } catch (...) {
             alloc.deallocate(new_start, new_size);
             throw;
         }
+        clear();
         alloc.deallocate(start, capacity());
         start = new_start;
         finish = new_finish;

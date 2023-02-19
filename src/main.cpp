@@ -1,51 +1,32 @@
-#include "vector.hpp"
+//provided by ivy
 
-#include "class-integer.hpp"
+#include "vector.hpp"
 #include "class-matrix.hpp"
 #include "class-bint.hpp"
-
 #include <iostream>
-#include <fstream>
-#include <string>
 
-void TestInteger()
+void complex_test()
 {
-	std::cout << "Test for classes without default constructor..." << std::endl;
-	sjtu::vector<Integer> vInt;
-	for (int i = 1; i <= 100; ++i) {
-		vInt.push_back(Integer(i));
-	}
-	std::cout << "Test OK..." << std::endl;
-}
-
-void TestMatrix()
-{
-	std::cout << "Test for my Matrix..." << std::endl;
-	sjtu::vector<Diamond::Matrix<double>> vM;
-	for (int i = 1; i <= 10; ++i) {
-		vM.push_back(Diamond::Matrix<double>(i, i, i));
-	}
-	for (size_t i = 0; i < vM.size(); ++i) {
-		std::cout << vM[i] << std::endl;
-	}
-}
-
-void TestBint()
-{
-	std::cout << "Test for big integer" << std::endl;
-	sjtu::vector<Util::Bint> vBint;
-	for (long long i = 1LL << 50; i < (1LL << 50) + 10; ++i) {
-		vBint.push_back(Util::Bint(i) * i);
-	}
-	for (sjtu::vector<Util::Bint>::iterator it = vBint.begin(); it != vBint.end(); ++it) {
-		std::cout << *it << " ";
-	}
-	std::cout << std::endl;
+    std::cout << "Supplementary test for large amounts of data ..." << std::endl;
+    sjtu::vector<Diamond::Matrix<Util::Bint>> myVec;
+    for (int i = 1; i <= 1926; ++i)
+        myVec.push_back(Diamond::Matrix<Util::Bint>(i % 8 + 1, i % 17 + 1, Util::Bint(i * 817)));
+    int o = 1234;
+    while (o--)
+        myVec.pop_back();
+    myVec = myVec;
+    int _ = 20, __ = myVec.size();
+    while (_--)
+    {
+        if (_ % 2 == 0)
+            std::cout << myVec[_][0][0] << std::endl;
+        else
+            std::cout << myVec[__ - _][0][0] << std::endl;
+    }
+    std::cout << "Finished!" << std::endl;
 }
 
 int main()
 {
-	TestInteger();
-	TestMatrix();
-	TestBint();
+    complex_test();
 }

@@ -26,4 +26,4 @@ test4() {
     diff test.out tmp/data/four/answer.txt
 }
 
-test3
+test4
