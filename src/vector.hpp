@@ -1,23 +1,263 @@
-#ifndef STLITE_VECTOR_H
-#define STLITE_VECTOR_H
+#ifndef SJTU_VECTOR_HPP
+#define SJTU_VECTOR_HPP
 
+#include "exceptions.hpp"
+
+#include <climits>
 #include <cmath>
+#include <cstddef>
 #include <iostream>
 
 namespace sjtu {
-
-template <class T, class Allocator = std::allocator<T>> class vector {
+/**
+ * a data container like std::vector
+ * store data in a successive memory and support random access.
+ */
+template <typename T, class Allocator = std::allocator<T>> class vector {
   public:
-    typedef T value_type;
-    typedef Allocator allocator_type;
-    typedef size_t size_type;
-    typedef unsigned int difference_type;
-    typedef value_type &reference;
-    typedef const value_type &const_reference;
-    typedef T *iterator;
-    typedef const T *const_iterator;
+    /**
+     * TODO
+     * a type for actions of the elements of a vector, and you should write
+     *   a class named const_iterator with same interfaces.
+     */
+    using value_type = T;
+    using allocator_type = Allocator;
+    using size_type = size_t;
+    using reference = value_type &;
+    using const_reference = const value_type &;
+    /**
+     * you can see RandomAccessIterator at CppReference for help.
+     */
+    class const_iterator;
+    class iterator {
+        // The following code is written for the C++ type_traits library.
+        // Type traits is a C++ feature for describing certain properties of a type.
+        // For instance, for an iterator, iterator::value_type is the type that the
+        // iterator points to.
+        // STL algorithms and containers may use these type_traits (e.g. the following
+        // typedef) to work properly. In particular, without the following code,
+        // @code{std::sort(iter, iter1);} would not compile.
+        // See these websites for more information:
+        // https://en.cppreference.com/w/cpp/header/type_traits
+        // About value_type: https://blog.csdn.net/u014299153/article/details/72419713
+        // About iterator_category: https://en.cppreference.com/w/cpp/iterator
+      public:
+        using difference_type = std::ptrdiff_t;
+        using value_type = T;
+        using pointer = T *;
+        using reference = T &;
+        using iterator_category = std::output_iterator_tag;
 
-  public:
+      private:
+        /**
+         * TODO add data members
+         *   just add whatever you want.
+         */
+        const vector<T> *iter;
+        pointer ptr;
+
+      public:
+        /**
+         * return a new iterator which pointer n-next elements
+         * as well as operator-
+         */
+        iterator() : ptr(nullptr) {}
+        iterator(const T *_ptr, const vector<T> *_iter) : ptr(_ptr), iter(_iter) {}
+        iterator(const iterator &rhs) : ptr(rhs.ptr), iter(rhs.iter) {}
+
+        iterator operator+(const int &n) const {
+            if (iter->finish - ptr < n)
+                throw invalid_iterator();
+            return iterator(ptr + n, iter);
+        }
+        iterator operator-(const int &n) const {
+            if (ptr - iter->start < n)
+                throw invalid_iterator();
+            return iterator(ptr - n, iter);
+        }
+
+        // return the distance between two iterators,
+        // if these two iterators point to different vectors, throw invaild_iterator.
+        int operator-(const iterator &rhs) const {
+            if (iter != rhs.iter)
+                throw invalid_iterator();
+            return ptr - rhs.iter;
+        }
+        iterator &operator+=(const int &n) {
+            if (iter->finish - ptr < n)
+                return index_out_of_bound();
+            ptr += n;
+            return *this;
+        }
+        iterator &operator-=(const int &n) {
+            if (ptr - iter->start < n)
+                throw invalid_iterator();
+            ptr -= n;
+            return *this;
+        }
+        /**
+         * TODO iter++
+         */
+        iterator operator++(int) {
+            if (ptr == iter->finish)
+                throw invalid_iterator();
+            ptr++;
+            return std::prev(*this);
+        }
+        /**
+         * TODO ++iter
+         */
+        iterator &operator++() {
+            if (ptr == iter->finish)
+                throw invalid_iterator();
+            ptr++;
+            return *this;
+        }
+        /**
+         * TODO iter--
+         */
+        iterator operator--(int) {
+            if (ptr == iter->start)
+                throw invalid_iterator();
+            ptr--;
+            return std::next(*this);
+        }
+        /**
+         * TODO --iter
+         */
+        iterator &operator--() {
+            if (ptr == iter->start)
+                throw invalid_iterator();
+            ptr--;
+        }
+        /**
+         * TODO *it
+         */
+        reference operator*() const { return *ptr; }
+        /**
+         * a operator to check whether two iterators are same (pointing to the same memory address).
+         */
+        bool operator==(const iterator &rhs) const { return ptr == rhs.ptr; }
+        bool operator==(const const_iterator &rhs) const { return ptr == rhs.ptr; }
+        /**
+         * some other operator for iterator.
+         */
+        bool operator!=(const iterator &rhs) const { return ptr != rhs.ptr; }
+        bool operator!=(const const_iterator &rhs) const { return ptr != rhs.ptr; }
+    };
+    /**
+     * TODO
+     * has same function as iterator, just for a const object.
+     */
+    class const_iterator {
+      public:
+        using difference_type = std::ptrdiff_t;
+        using value_type = T;
+        using pointer = T *;
+        using reference = T &;
+        using iterator_category = std::output_iterator_tag;
+
+      private:
+        /**
+         * TODO add data members
+         *   just add whatever you want.
+         */
+        const vector<T> *iter;
+        pointer ptr;
+
+      public:
+        /**
+         * return a new iterator which pointer n-next elements
+         * as well as operator-
+         */
+        const_iterator() : ptr(nullptr) {}
+        const_iterator(const T *_ptr, const vector<T> *_iter) : ptr(_ptr), iter(_iter) {}
+        const_iterator(const const_iterator &rhs) : ptr(rhs.ptr), iter(rhs.iter) {}
+
+        const_iterator operator+(const int &n) const {
+            if (iter->finish - ptr < n)
+                throw invalid_iterator();
+            return const_iterator(ptr + n, iter);
+        }
+        const_iterator operator-(const int &n) const {
+            if (ptr - iter->start < n)
+                throw invalid_iterator();
+            return const_iterator(ptr - n, iter);
+        }
+
+        // return the distance between two iterators,
+        // if these two iterators point to different vectors, throw invaild_iterator.
+        int operator-(const const_iterator &rhs) const {
+            if (iter != rhs.iter)
+                throw invalid_iterator();
+            return ptr - rhs.iter;
+        }
+        const_iterator &operator+=(const int &n) {
+            if (iter->finish - ptr < n)
+                return index_out_of_bound();
+            ptr += n;
+            return *this;
+        }
+        const_iterator &operator-=(const int &n) {
+            if (ptr - iter->start < n)
+                throw invalid_iterator();
+            ptr -= n;
+            return *this;
+        }
+        /**
+         * TODO iter++
+         */
+        const_iterator operator++(int) {
+            if (ptr == iter->finish)
+                throw invalid_iterator();
+            ptr++;
+            return std::prev(*this);
+        }
+        /**
+         * TODO ++iter
+         */
+        const_iterator &operator++() {
+            if (ptr == iter->finish)
+                throw invalid_iterator();
+            ptr++;
+            return *this;
+        }
+        /**
+         * TODO iter--
+         */
+        const_iterator operator--(int) {
+            if (ptr == iter->start)
+                throw invalid_iterator();
+            ptr--;
+            return std::next(*this);
+        }
+        /**
+         * TODO --iter
+         */
+        const_iterator &operator--() {
+            if (ptr == iter->start)
+                throw invalid_iterator();
+            ptr--;
+        }
+        /**
+         * TODO *it
+         */
+        const_reference operator*() const { return *ptr; }
+        /**
+         * a operator to check whether two iterators are same (pointing to the same memory address).
+         */
+        bool operator==(const iterator &rhs) const { return ptr == rhs.ptr; }
+        bool operator==(const const_iterator &rhs) const { return ptr == rhs.ptr; }
+        /**
+         * some other operator for iterator.
+         */
+        bool operator!=(const iterator &rhs) const { return ptr != rhs.ptr; }
+        bool operator!=(const const_iterator &rhs) const { return ptr != rhs.ptr; }
+    };
+    /**
+     * TODO Constructs
+     * At least two: default constructor, copy constructor
+     */
     vector() noexcept {
         start = alloc.allocate(1);
         finish = start;
@@ -39,13 +279,17 @@ template <class T, class Allocator = std::allocator<T>> class vector {
         for (iterator it = start; it != finish; it++)
             alloc.construct(it, value);
     }
-
+    /**
+     * TODO Destructor
+     */
     ~vector() {
         clear();
         alloc.deallocate(start, capacity());
         start = finish = end_of_storage = nullptr;
     }
-
+    /**
+     * TODO Assignment operator
+     */
     vector &operator=(const vector &other) {
         if (this == &other)
             return *this;
@@ -57,29 +301,76 @@ template <class T, class Allocator = std::allocator<T>> class vector {
         std::copy(other.start, other.finish, start);
         return *this;
     }
-
-    iterator begin() noexcept { return start; }
-    const_iterator cbegin() const noexcept { return start; }
-    iterator end() { return finish; }
-    const_iterator cend() const noexcept { return finish; }
-
-    size_t size() const noexcept { return cend() - cbegin(); }
-    size_t capacity() const noexcept { return end_of_storage - cbegin(); }
-    bool empty() const noexcept { return cbegin() == cend(); }
-
+    /**
+     * assigns specified element with bounds checking
+     * throw index_out_of_bound if pos is not in [0, size)
+     */
     reference at(const size_type &pos) {
         if (pos >= size())
-            throw std::out_of_range("");
+            throw index_out_of_bound();
         return *(begin() + pos);
     }
-    const_reference at(const size_type &pos) const { return at(pos); };
-
-    reference operator[](const size_type &pos) { return *(begin() + pos); }
-    const_reference operator[](const size_type &pos) const { return *(cbegin() + pos); };
-
+    const_reference at(const size_type &pos) const {
+        if (pos >= size())
+            throw index_out_of_bound();
+        return *(cbegin() + pos);
+    }
+    /**
+     * assigns specified element with bounds checking
+     * throw index_out_of_bound if pos is not in [0, size)
+     * !!! Pay attentions
+     *   In STL this operator does not check the boundary but I want you to do.
+     */
+    reference operator[](const size_type &pos) {
+        if (pos >= size())
+            throw index_out_of_bound();
+        return *(begin() + pos);
+    }
+    const_reference operator[](const size_type &pos) const {
+        if (pos >= size())
+            throw index_out_of_bound();
+        return *(cbegin() + pos);
+    }
+    /**
+     * access the first element.
+     * throw container_is_empty if size == 0
+     */
     const_reference front() const { return *cbegin(); };
+    /**
+     * access the last element.
+     * throw container_is_empty if size == 0
+     */
     const_reference back() const { return *std::prev(cend()); }
-
+    /**
+     * returns an iterator to the beginning.
+     */
+    iterator begin() noexcept { return start; }
+    const_iterator cbegin() const noexcept { return start; }
+    /**
+     * returns an iterator to the end.
+     */
+    iterator end() { return finish; }
+    const_iterator cend() const noexcept { return finish; }
+    /**
+     * checks whether the container is empty
+     */
+    bool empty() const noexcept { return cbegin() == cend(); }
+    /**
+     * returns the number of elements
+     */
+    size_t size() const noexcept { return cend() - cbegin(); }
+    size_t capacity() const noexcept { return end_of_storage - cbegin(); }
+    /**
+     * clears the contents
+     */
+    void clear() {
+        while (--finish != start)
+            alloc.destroy(finish);
+        alloc.destroy(start);
+    }
+    /**
+     * reserve the space
+     */
     void reserve(const size_type &new_cap) {
         if (new_cap <= capacity())
             return;
@@ -100,23 +391,10 @@ template <class T, class Allocator = std::allocator<T>> class vector {
         finish = new_finish;
         end_of_storage = new_end_of_storage;
     }
-
-    void push_back(const value_type &value) {
-        if (finish == end_of_storage)
-            reserve(capacity() << 1);
-        alloc.construct(finish, value);
-        finish++;
-    }
-    void pop_back() {
-        finish--;
-        alloc.destroy(finish);
-    }
-    void clear() {
-        while (--finish != start)
-            alloc.destroy(finish);
-        alloc.destroy(start);
-    }
-
+    /**
+     * inserts value before pos
+     * returns an iterator pointing to the inserted value.
+     */
     iterator insert(iterator pos, const value_type &value) {
         if (pos < start || pos > finish)
             throw std::out_of_range("");
@@ -130,8 +408,19 @@ template <class T, class Allocator = std::allocator<T>> class vector {
         *pos = value;
         return pos;
     }
+    /**
+     * inserts value at index ind.
+     * after inserting, this->at(ind) == value
+     * returns an iterator pointing to the inserted value.
+     * throw index_out_of_bound if ind > size (in this situation ind can be size because after inserting the size will
+     * increase 1.)
+     */
     iterator insert(const size_t &pos, const T &data) { return insert(begin() + pos, data); }
-
+    /**
+     * removes the element at pos.
+     * return an iterator pointing to the following element.
+     * If the iterator pos refers the last element, the end() iterator is returned.
+     */
     iterator erase(iterator pos) {
         if (pos < start || pos >= finish)
             throw std::out_of_range("");
@@ -141,16 +430,36 @@ template <class T, class Allocator = std::allocator<T>> class vector {
         alloc.destroy(finish);
         return pos;
     }
+    /**
+     * removes the element with index ind.
+     * return an iterator pointing to the following element.
+     * throw index_out_of_bound if ind >= size
+     */
     iterator erase(const size_t &pos) { return erase(begin() + pos); }
+    /**
+     * adds an element to the end.
+     */
+    void push_back(const value_type &value) {
+        if (finish == end_of_storage)
+            reserve(capacity() << 1);
+        alloc.construct(finish, value);
+        finish++;
+    }
+    /**
+     * remove the last element from the end.
+     * throw container_is_empty if size() == 0
+     */
+    void pop_back() {
+        finish--;
+        alloc.destroy(finish);
+    }
 
   private:
     iterator start;
     iterator finish;
     iterator end_of_storage;
-    allocator_type alloc;
+    [[no_unique_address]] allocator_type alloc;
 };
-
-template class vector<int>;
 
 } // namespace sjtu
 
