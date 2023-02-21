@@ -3,3 +3,4 @@ build/
 generated/
 tmp/
 .cache/
+lib/

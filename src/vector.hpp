@@ -3,9 +3,7 @@
 
 #include "exceptions.hpp"
 
-#include <climits>
 #include <cmath>
-#include <cstddef>
 #include <iostream>
 
 namespace sjtu {
@@ -53,7 +51,7 @@ template <typename T, class Allocator = std::allocator<T>> class vector {
          * TODO add data members
          *   just add whatever you want.
          */
-        // const vector<T> *iter;
+        const vector<T> *iter;
         pointer ptr;
 
         friend class vector;
@@ -65,17 +63,17 @@ template <typename T, class Allocator = std::allocator<T>> class vector {
          * as well as operator-
          */
         iterator() : ptr(nullptr) {}
-        iterator(T *_ptr/*, const vector<T> *_iter*/) : ptr(_ptr)/*, iter(_iter)*/ {}
-        iterator(const iterator &rhs) : ptr(rhs.ptr)/*, iter(rhs.iter)*/ {}
+        iterator(T *_ptr, const vector<T> *_iter) : ptr(_ptr), iter(_iter) {}
+        iterator(const iterator &rhs) : ptr(rhs.ptr), iter(rhs.iter) {}
 
-        iterator operator+(const int &n) const { return iterator(ptr + n/*, iter*/); }
-        iterator operator-(const int &n) const { return iterator(ptr - n/*, iter*/); }
+        iterator operator+(const int &n) const { return iterator(ptr + n, iter); }
+        iterator operator-(const int &n) const { return iterator(ptr - n, iter); }
 
         // return the distance between two iterators,
         // if these two iterators point to different vectors, throw invaild_iterator.
         int operator-(const iterator &rhs) const {
-            // if (iter != rhs.iter)
-            //     throw invalid_iterator();
+            if (iter != rhs.iter)
+                throw invalid_iterator();
             return ptr - rhs.ptr;
         }
         iterator &operator+=(const int &n) {
@@ -91,7 +89,7 @@ template <typename T, class Allocator = std::allocator<T>> class vector {
          */
         iterator operator++(int) {
             ptr++;
-            return iterator(ptr - 1/*, iter*/);
+            return iterator(ptr - 1, iter);
         }
         /**
          * TODO ++iter
@@ -105,7 +103,7 @@ template <typename T, class Allocator = std::allocator<T>> class vector {
          */
         iterator operator--(int) {
             ptr--;
-            return iterator(ptr + 1/*, iter*/);
+            return iterator(ptr + 1, iter);
         }
         /**
          * TODO --iter
@@ -146,7 +144,7 @@ template <typename T, class Allocator = std::allocator<T>> class vector {
          * TODO add data members
          *   just add whatever you want.
          */
-        // const vector<T> *iter;
+        const vector<T> *iter;
         pointer ptr;
 
         friend class vector;
@@ -157,19 +155,18 @@ template <typename T, class Allocator = std::allocator<T>> class vector {
          * return a new iterator which pointer n-next elements
          * as well as operator-
          */
-        const_iterator() : ptr(nullptr) {}
-        const_iterator(T *_ptr/*, const vector<T> *_iter*/) : ptr(_ptr)/*, iter(_iter)*/ {}
-        const_iterator(const iterator &rhs) : ptr(rhs.ptr)/*, iter(rhs.iter)*/ {}
-        const_iterator(const const_iterator &rhs) : ptr(rhs.ptr)/*, iter(rhs.iter)*/ {}
+        const_iterator(T *_ptr, const vector<T> *_iter) : ptr(_ptr), iter(_iter) {}
+        const_iterator(const iterator &rhs) : ptr(rhs.ptr), iter(rhs.iter) {}
+        const_iterator(const const_iterator &rhs) : ptr(rhs.ptr), iter(rhs.iter) {}
 
-        const_iterator operator+(const int &n) const { return const_iterator(ptr + n/*, iter*/); }
-        const_iterator operator-(const int &n) const { return const_iterator(ptr - n/*, iter*/); }
+        const_iterator operator+(const int &n) const { return const_iterator(ptr + n, iter); }
+        const_iterator operator-(const int &n) const { return const_iterator(ptr - n, iter); }
 
         // return the distance between two iterators,
         // if these two iterators point to different vectors, throw invaild_iterator.
         int operator-(const const_iterator &rhs) const {
-            // if (iter != rhs.iter)
-            //     throw invalid_iterator();
+            if (iter != rhs.iter)
+                throw invalid_iterator();
             return ptr - rhs.ptr;
         }
         const_iterator &operator+=(const int &n) {
@@ -185,7 +182,7 @@ template <typename T, class Allocator = std::allocator<T>> class vector {
          */
         const_iterator operator++(int) {
             ptr++;
-            return const_iterator(ptr - 1/*, iter*/);
+            return const_iterator(ptr - 1, iter);
         }
         /**
          * TODO ++iter
@@ -199,7 +196,7 @@ template <typename T, class Allocator = std::allocator<T>> class vector {
          */
         const_iterator operator--(int) {
             ptr--;
-            return const_iterator(ptr + 1/*, iter*/);
+            return const_iterator(ptr + 1, iter);
         }
         /**
          * TODO --iter
@@ -228,12 +225,12 @@ template <typename T, class Allocator = std::allocator<T>> class vector {
      * At least two: default constructor, copy constructor
      */
     vector() noexcept {
-        start = iterator(alloc.allocate(1)/*, this*/);
+        start = iterator(alloc.allocate(1), this);
         finish = start;
         end_of_storage = start + 1;
     }
     vector(const vector &other) noexcept {
-        start.ptr = alloc.allocate(other.capacity());
+        start = iterator(alloc.allocate(other.capacity()), this);
         finish = start + other.size();
         end_of_storage = start + other.capacity();
         for (iterator it1 = start, it2 = other.start; it2 != other.finish; it1++, it2++)
@@ -242,7 +239,7 @@ template <typename T, class Allocator = std::allocator<T>> class vector {
     vector(vector &&other) noexcept = default;
     explicit vector(size_type count, const T &value = T()) noexcept {
         int new_size = pow(2, ceil(log2(count)));
-        start.ptr = alloc.allocate(new_size);
+        start = iterator(alloc.allocate(new_size), this);
         finish = start + count;
         end_of_storage = start + new_size;
         for (iterator it = start; it != finish; it++)
@@ -254,7 +251,7 @@ template <typename T, class Allocator = std::allocator<T>> class vector {
     ~vector() {
         clear();
         alloc.deallocate(start.ptr, capacity());
-        start = finish = end_of_storage = iterator(nullptr/*, this*/);
+        start = finish = end_of_storage = iterator(nullptr, this);
     }
     /**
      * TODO Assignment operator
@@ -352,7 +349,7 @@ template <typename T, class Allocator = std::allocator<T>> class vector {
         if (new_cap <= capacity())
             return;
         int new_size = pow(2, ceil(log2(new_cap)));
-        iterator new_start = iterator(alloc.allocate(new_size)/*, this*/);
+        iterator new_start = iterator(alloc.allocate(new_size), this);
         iterator new_finish = new_start + size();
         iterator new_end_of_storage = new_start + new_size;
         try {
