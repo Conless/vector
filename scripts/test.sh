@@ -1,3 +1,4 @@
+
 test1() {
     cp data/one/code.cpp src/main.cpp
     bash scripts/build.sh
@@ -26,4 +27,4 @@ test4() {
     diff test.out data/four/answer.txt
 }
 
-test1
+test2
